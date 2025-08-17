@@ -122,6 +122,9 @@ export const useNetworkMonitor = (): [
 
   const handleBeforeRequest = useCallback(
     (details: chrome.webRequest.WebRequestBodyDetails) => {
+      if (details.method === 'OPTIONS') {
+        return
+      }
       if (details.method === 'GET' && urlHasFileExtension(details.url)) {
         return
       }
@@ -146,6 +149,9 @@ export const useNetworkMonitor = (): [
 
   const handleBeforeSendHeaders = useCallback(
     async (details: chrome.webRequest.WebRequestHeadersDetails) => {
+      if (details.method === 'OPTIONS') {
+        return
+      }
       if (details.method === 'GET' && urlHasFileExtension(details.url)) {
         return
       }
@@ -239,6 +245,9 @@ export const useNetworkMonitor = (): [
 
   const handleRequestFinished = useCallback(
     async (details: chrome.devtools.network.Request) => {
+      if (details.request.method === 'OPTIONS') {
+        return
+      }
       if (
         details.request.method === 'GET' &&
         urlHasFileExtension(details.request.url)
@@ -286,9 +295,11 @@ export const useNetworkMonitor = (): [
 
   const handleHAREntries = useCallback(
     async (entries: chrome.devtools.network.Request[]) => {
-      const validEntries = entries.filter((details) => {
-        return 'getContent' in details
-      })
+      const validEntries = entries
+        .filter((details) => {
+          return 'getContent' in details
+        })
+        .filter((details) => details.request.method !== 'OPTIONS')
 
       const entriesWithContent = await Promise.all(
         validEntries.map((details) => {
