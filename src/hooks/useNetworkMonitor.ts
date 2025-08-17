@@ -19,6 +19,7 @@ import {
   urlHasFileExtension,
 } from '../helpers/networkHelpers'
 import useLatestState from './useLatestState'
+import { parseRestBody } from '../helpers/restHelpers'
 
 export interface IClearWebRequestsOptions {
   clearPending?: boolean
@@ -177,27 +178,37 @@ export const useNetworkMonitor = (): [
       }
 
       const graphqlRequestBody = parseGraphqlBody(body)
+      let parsedRequestBody = graphqlRequestBody
+
       if (!graphqlRequestBody) {
+        parsedRequestBody = parseRestBody(body)
+      }
+
+      if (!parsedRequestBody) {
         return
       }
 
-      let primaryOperation = getFirstGraphqlOperation(graphqlRequestBody)
+      let primaryOperation =
+        graphqlRequestBody && getFirstGraphqlOperation(graphqlRequestBody)
 
       if (!primaryOperation) {
-        const restUrl = new URL(matchedRequest?.native?.webRequest?.url || '')
-        primaryOperation = {
-          operation: 'rest',
-          operationName: restUrl.pathname,
+        try {
+          const restUrl = new URL(matchedRequest?.native?.webRequest?.url || '')
+          primaryOperation = {
+            operation: 'rest',
+            operationName: restUrl.pathname,
+          }
+        } catch (e) {
+          primaryOperation = {
+            operation: 'rest',
+            operationName: matchedRequest?.native?.webRequest?.url || 'REST',
+          }
         }
       }
 
-      if (!primaryOperation) {
-        return
-      }
-
       const request = {
-        primaryOperation,
-        body: graphqlRequestBody?.map((requestBody) => ({
+        primaryOperation: primaryOperation!,
+        body: (parsedRequestBody || []).map((requestBody) => ({
           ...requestBody,
           id: uuid(),
         })),
