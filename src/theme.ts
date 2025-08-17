@@ -17,6 +17,10 @@ const operationColors: Record<OperationType, { text: string; bg: string }> = {
     text: "text-yellow-400",
     bg: "bg-yellow-400",
   },
+  rest: {
+    text: "text-purple-400",
+    bg: "bg-purple-400",
+  },
 }
 
 const theme = {

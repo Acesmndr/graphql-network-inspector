@@ -16,6 +16,7 @@ export const OperationFiltersProvider: React.FC<{}> = ({ children }) => {
     mutation: true,
     subscription: false,
     persisted: true,
+    rest: true,
   })
 
   return (

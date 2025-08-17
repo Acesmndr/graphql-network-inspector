@@ -181,14 +181,23 @@ export const useNetworkMonitor = (): [
         return
       }
 
-      const primaryOperation = getFirstGraphqlOperation(graphqlRequestBody)
+      let primaryOperation = getFirstGraphqlOperation(graphqlRequestBody)
+
+      if (!primaryOperation) {
+        const restUrl = new URL(matchedRequest?.native?.webRequest?.url || '')
+        primaryOperation = {
+          operation: 'rest',
+          operationName: restUrl.pathname,
+        }
+      }
+
       if (!primaryOperation) {
         return
       }
 
       const request = {
         primaryOperation,
-        body: graphqlRequestBody.map((requestBody) => ({
+        body: graphqlRequestBody?.map((requestBody) => ({
           ...requestBody,
           id: uuid(),
         })),
@@ -226,17 +235,22 @@ export const useNetworkMonitor = (): [
         return
       }
 
-      if (!validateNetworkRequest(details)) {
+      const requests = getLatestRequests()
+      const matchedRequest = await findMatchingWebRequest(requests, details)
+      if (!matchedRequest) {
         return
+      }
+
+      const isValidGraphql = await validateNetworkRequest(details)
+      if (!isValidGraphql) {
+        const operation = matchedRequest.request?.primaryOperation?.operation
+        if (operation !== 'rest') {
+          return
+        }
       }
 
       details.getContent(async (content, encoding) => {
         const responseBody = encoding === 'base64' ? atob(content) : content
-        const requests = getLatestRequests()
-        const matchedRequest = await findMatchingWebRequest(requests, details)
-        if (!matchedRequest) {
-          return
-        }
 
         setRequests((prevRequests) => {
           return prevRequests.map((prevRequest) => {
@@ -262,7 +276,7 @@ export const useNetworkMonitor = (): [
   const handleHAREntries = useCallback(
     async (entries: chrome.devtools.network.Request[]) => {
       const validEntries = entries.filter((details) => {
-        return 'getContent' in details && validateNetworkRequest(details)
+        return 'getContent' in details
       })
 
       const entriesWithContent = await Promise.all(
@@ -275,22 +289,50 @@ export const useNetworkMonitor = (): [
               }
 
               const graphqlRequestBody = parseGraphqlBody(body)
-              if (!graphqlRequestBody) {
-                return
+
+              // Build an effective request body similar to live path
+              let effectiveRequestBody =
+                graphqlRequestBody as typeof graphqlRequestBody
+              if (!effectiveRequestBody) {
+                try {
+                  const parsed = JSON.parse(body)
+                  const asArray = Array.isArray(parsed) ? parsed : [parsed]
+                  effectiveRequestBody = asArray.map((p: any) => ({
+                    query: p?.query,
+                    operationName: p?.operationName,
+                    variables: p?.variables,
+                    extensions: p?.extensions,
+                  }))
+                } catch (e) {
+                  // noop
+                }
               }
 
-              const primaryOperation =
-                getFirstGraphqlOperation(graphqlRequestBody)
+              let primaryOperation =
+                effectiveRequestBody &&
+                getFirstGraphqlOperation(effectiveRequestBody)
+
               if (!primaryOperation) {
-                return
+                try {
+                  const restUrl = new URL(details.request.url)
+                  primaryOperation = {
+                    operation: 'rest',
+                    operationName: restUrl.pathname,
+                  }
+                } catch (e) {
+                  primaryOperation = {
+                    operation: 'rest',
+                    operationName: details.request.url || 'REST',
+                  }
+                }
               }
 
               resolve({
                 id: uuid(),
                 ...processNetworkRequest(details, responseBody),
                 request: {
-                  primaryOperation,
-                  body: graphqlRequestBody.map((requestBody) => ({
+                  primaryOperation: primaryOperation!,
+                  body: (effectiveRequestBody || []).map((requestBody) => ({
                     ...requestBody,
                     id: uuid(),
                   })),

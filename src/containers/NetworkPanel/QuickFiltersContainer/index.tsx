@@ -83,6 +83,14 @@ export const QuickFiltersContainer = () => {
         >
           Subscriptions
         </QuickFilterButton>
+        <QuickFilterButton
+          variant={operationFilters.rest ? 'primary' : 'ghost'}
+          onClick={() => handleQuickFilterToggle('rest')}
+          active={operationFilters.rest}
+          activeColor={theme.operationColors.rest.bg}
+        >
+          Rest
+        </QuickFilterButton>
       </div>
     </Bar>
   )

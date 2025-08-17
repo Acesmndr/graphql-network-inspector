@@ -1,12 +1,12 @@
-import { FC } from "react"
-import { HighlightedText } from "../../components/HighlightedText"
-import { ISearchResult } from "../../services/searchService"
+import { FC } from 'react'
+import { HighlightedText } from '../../components/HighlightedText'
+import { ISearchResult } from '../../services/searchService'
 import {
   getHeaderSearchContent,
   getRequestSearchContent,
   getResponseSearchContent,
-} from "../../helpers/getSearchContent"
-import { NetworkTabs } from "../../hooks/useNetworkTabs"
+} from '../../helpers/getSearchContent'
+import { NetworkTabs } from '../../hooks/useNetworkTabs'
 
 interface ISearchResultsProps {
   searchQuery: string
@@ -48,7 +48,7 @@ const SearchResultEntryRow: FC<ISearchResultEntryRowProps> = ({
 const SearchResultEntry = (props: ISearchResultEntryProps) => {
   const { searchQuery, searchResult, onResultClick, index } = props
   const { matches, networkRequest } = searchResult
-  const { operationName } = networkRequest.request.primaryOperation
+  const { operationName } = networkRequest.request.primaryOperation || {}
 
   return (
     <div data-testid={`search-results-${index}`}>

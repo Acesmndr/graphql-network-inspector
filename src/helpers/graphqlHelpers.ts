@@ -1,7 +1,12 @@
 import { FieldNode, GraphQLError, OperationDefinitionNode } from 'graphql'
 import gql from 'graphql-tag'
 
-export type OperationType = 'query' | 'mutation' | 'subscription' | 'persisted'
+export type OperationType =
+  | 'query'
+  | 'mutation'
+  | 'subscription'
+  | 'persisted'
+  | 'rest'
 
 export interface IGraphqlRequestBody {
   query?: string
@@ -125,7 +130,7 @@ export const getFirstGraphqlOperation = (
       ) as FieldNode
 
       const operationName =
-        graphqlBody[0].operationName ||
+        graphqlBody[0]?.operationName ||
         firstOperationDefinition.name?.value ||
         field?.name.value
       const operation = firstOperationDefinition?.operation

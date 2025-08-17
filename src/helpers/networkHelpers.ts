@@ -2,6 +2,7 @@ import { IGraphqlRequestBody, IOperationDetails } from './graphqlHelpers'
 import decodeQueryParam from './decodeQueryParam'
 import { parse } from './safeJson'
 import { decompress, CompressionType } from './gzip'
+import { IRestRequestBody } from './restHelpers'
 
 export interface IHeader {
   name: string
@@ -265,7 +266,9 @@ export const getRequestBodyFromMultipartFormData = (
  * @param url the URL to parse
  * @returns the request body
  */
-export const getRequestBodyFromUrl = (url: string): IGraphqlRequestBody => {
+export const getRequestBodyFromUrl = (
+  url: string
+): IGraphqlRequestBody | IRestRequestBody => {
   const urlObj = new URL(url)
   const query = urlObj.searchParams.get('query')
   const variables = urlObj.searchParams.get('variables')
@@ -300,6 +303,18 @@ export const getRequestBodyFromUrl = (url: string): IGraphqlRequestBody => {
       extensions: decodedExtensions ? JSON.parse(decodedExtensions) : undefined,
       variables: decodedVariables ? JSON.parse(decodedVariables) : undefined,
     }
+  }
+
+  // Else handle rest request query
+  const paramPayload: Record<string, string> = {}
+  const entries = Array.from(urlObj?.searchParams?.entries())
+  for (const [key, value] of entries) {
+    paramPayload[key] = value
+  }
+  return {
+    query: '',
+    operationName: url,
+    variables: paramPayload,
   }
 
   throw new Error('Could not parse request body from URL')

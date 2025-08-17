@@ -3,7 +3,7 @@ import useCopy from "../../hooks/useCopy"
 
 interface ICopyButtonProps {
   label?: string
-  textToCopy: string
+  textToCopy?: string
   className?: string
 }
 
@@ -11,6 +11,10 @@ export const CopyButton = (props: ICopyButtonProps) => {
   const { textToCopy, className } = props
   const { isCopied, copy } = useCopy()
   const buttonLabel = props.label || "Copy"
+
+  if (!textToCopy) {
+    return null
+  }
 
   return (
     <div className={className}>

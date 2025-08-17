@@ -18,6 +18,7 @@ const OperationAliases: Record<OperationType, string> = {
   mutation: 'M',
   subscription: 'S',
   persisted: 'P',
+  rest: 'R',
 }
 
 export interface INetworkTableDataRow {
