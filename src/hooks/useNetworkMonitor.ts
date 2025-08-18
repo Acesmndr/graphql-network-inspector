@@ -245,6 +245,7 @@ export const useNetworkMonitor = (): [
 
   const handleRequestFinished = useCallback(
     async (details: chrome.devtools.network.Request) => {
+      // Hide options requests as they are redundant
       if (details.request.method === 'OPTIONS') {
         return
       }
